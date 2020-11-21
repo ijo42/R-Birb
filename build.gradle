@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'ru.ijo42'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.5-SNAPSHOT'
 sourceCompatibility = '15'
 
 configurations {
@@ -21,6 +21,10 @@ repositories {
 
 ext {
     set('snippetsDir', file("build/generated-snippets"))
+}
+
+bootBuildImage {
+    imageName = "ijo42/rbirb"
 }
 
 dependencies {
