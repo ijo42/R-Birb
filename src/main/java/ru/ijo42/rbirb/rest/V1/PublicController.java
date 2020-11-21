@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.view.RedirectView;
 import ru.ijo42.rbirb.model.PhotoModel;
 import ru.ijo42.rbirb.model.StagingModel;
 import ru.ijo42.rbirb.model.Status;
@@ -106,28 +108,74 @@ public class PublicController {
                 collect(Collectors.toList()), HttpStatus.OK);
     }
 
+    @GetMapping("/rand")
+    public ResponseEntity<byte[]> getRandomlyByte() {
+        try {
+            return getImage(getRandomByPredicate(x -> true).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
+    }
+
     @GetMapping("/random")
-    public ResponseEntity<byte[]> getRandomly() {
-        return getImage(getRandomByPredicate(x -> true).getId());
+    public RedirectView getRandomly() {
+        try {
+            return new RedirectView("/v1/" +
+                    getRandomByPredicate(x -> true).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new RedirectView("");
+        }
     }
 
     @GetMapping(value = "/random/info", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PhotoDTO> getInfoRandomly() {
-        PhotoModel photoModel = getRandomByPredicate(x -> true);
-        return new ResponseEntity<>(new PhotoDTO(photoModel), HttpStatus.OK);
+        try {
+            PhotoModel photoModel = getRandomByPredicate(x -> true);
+            return new ResponseEntity<>(new PhotoDTO(photoModel), HttpStatus.OK);
+        } catch (HttpStatusCodeException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
+    }
+
+    @GetMapping("/rand/png")
+    public ResponseEntity<byte[]> getRandomlyPngByte() {
+        try {
+            return getImage(getRandomByPredicate(photoModel -> !photoModel.isAnimated()).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
+    }
+
+    @GetMapping("/rand/gif")
+    public ResponseEntity<byte[]> getRandomlyGifByte() {
+        try {
+            return getImage(getRandomByPredicate(PhotoModel::isAnimated).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
     }
 
     @GetMapping("/random/png")
-    public ResponseEntity<byte[]> getRandomlyPng() {
-        return getImage(getRandomByPredicate(photoModel -> !photoModel.isAnimated()).getId());
+    public RedirectView getRandomlyPng() {
+        try {
+            return new RedirectView("/v1/" +
+                    getRandomByPredicate(photoModel -> !photoModel.isAnimated()).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new RedirectView("");
+        }
     }
 
     @GetMapping("/random/gif")
-    public ResponseEntity<byte[]> getRandomlyGif() {
-        return getImage(getRandomByPredicate(PhotoModel::isAnimated).getId());
+    public RedirectView getRandomlyGif() {
+        try {
+            return new RedirectView("/v1/" +
+                    getRandomByPredicate(PhotoModel::isAnimated).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new RedirectView("");
+        }
     }
 
-    public PhotoModel getRandomByPredicate(Predicate<? super PhotoModel> predicate) {
+    public PhotoModel getRandomByPredicate(Predicate<? super PhotoModel> predicate) throws HttpClientErrorException {
         List<PhotoModel> photos = photoRepository.findAll().stream().
                 filter(x -> x.getStatus() == Status.ACTIVE).
                 filter(predicate).collect(Collectors.toList());
