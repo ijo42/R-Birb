@@ -137,6 +137,30 @@ public class PublicController {
         }
     }
 
+    @GetMapping("/{id}.png")
+    public ResponseEntity<byte[]> getStrictPng(@PathVariable("id") long id) {
+        try {
+            List<PhotoModel> models = getByPredicate(photoModel -> !photoModel.isAnimated());
+            if (models.size() < id)
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return getImage(models.get((int) id).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
+    }
+
+    @GetMapping("/{id}.gif")
+    public ResponseEntity<byte[]> getStrictGif(@PathVariable("id") long id) {
+        try {
+            List<PhotoModel> models = getByPredicate(PhotoModel::isAnimated);
+            if (models.size() < id)
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return getImage(models.get((int) id).getId());
+        } catch (HttpStatusCodeException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
+    }
+
     @GetMapping("/rand/png")
     public ResponseEntity<byte[]> getRandomlyPngByte() {
         try {
@@ -176,15 +200,20 @@ public class PublicController {
     }
 
     public PhotoModel getRandomByPredicate(Predicate<? super PhotoModel> predicate) throws HttpClientErrorException {
+        List<PhotoModel> photos = getByPredicate(predicate);
+        Collections.shuffle(photos);
+
+        return photos.get(0);
+    }
+
+    public List<PhotoModel> getByPredicate(Predicate<? super PhotoModel> predicate) throws HttpClientErrorException {
         List<PhotoModel> photos = photoRepository.findAll().stream().
                 filter(x -> x.getStatus() == Status.ACTIVE).
                 filter(predicate).collect(Collectors.toList());
-
-        Collections.shuffle(photos);
         if (photos.size() < 1)
             throw new HttpClientErrorException(HttpStatus.NO_CONTENT);
 
-        return photos.get(0);
+        return photos;
     }
 
 }
