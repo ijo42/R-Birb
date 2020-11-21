@@ -120,7 +120,7 @@ public class PublicController {
     @GetMapping("/random")
     public RedirectView getRandomly() {
         try {
-            return new RedirectView("/v1/" +
+            return new RedirectView("/api/v1/" +
                     getRandomByPredicate(x -> true).getId());
         } catch (HttpStatusCodeException ex) {
             return new RedirectView("");
@@ -158,7 +158,7 @@ public class PublicController {
     @GetMapping("/random/png")
     public RedirectView getRandomlyPng() {
         try {
-            return new RedirectView("/v1/" +
+            return new RedirectView("/api/v1/" +
                     getRandomByPredicate(photoModel -> !photoModel.isAnimated()).getId());
         } catch (HttpStatusCodeException ex) {
             return new RedirectView("");
@@ -168,7 +168,7 @@ public class PublicController {
     @GetMapping("/random/gif")
     public RedirectView getRandomlyGif() {
         try {
-            return new RedirectView("/v1/" +
+            return new RedirectView("/api/v1/" +
                     getRandomByPredicate(PhotoModel::isAnimated).getId());
         } catch (HttpStatusCodeException ex) {
             return new RedirectView("");
