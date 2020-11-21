@@ -20,10 +20,20 @@ public class PhotoDTO {
     private Status status;
 
     public PhotoDTO(PhotoModel model) {
-        this.id = model.getId();
-        this.uploader = model.getUploader();
-        this.isAnimated = model.isAnimated();
-        this.moderator = model.getModerator();
-        this.status = model.getStatus();
+        setId(model.getId());
+        setUploader(model.getUploader());
+        setAnimated(model.isAnimated());
+        setModerator(model.getModerator());
+        setStatus(model.getStatus());
+    }
+
+    public PhotoModel toPhotoModel() {
+        PhotoModel photoModel = new PhotoModel();
+        photoModel.setId(getId());
+        photoModel.setUploader(getUploader());
+        photoModel.setAnimated(isAnimated());
+        photoModel.setModerator(getModerator());
+        photoModel.setStatus(getStatus());
+        return photoModel;
     }
 }

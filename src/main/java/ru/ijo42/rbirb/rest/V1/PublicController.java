@@ -63,21 +63,14 @@ public class PublicController {
 
     @GetMapping(value = "/{id}")
     public ResponseEntity<byte[]> getImage(@PathVariable("id") long id) {
-        Optional<PhotoModel> modelOptional = photoRepository.findById(id);
-        if (modelOptional.isEmpty())
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        PhotoModel photoModel = modelOptional.get();
-        if (photoModel.getStatus() != Status.ACTIVE) {
-            log.debug("IN getImage - Photo #{} not available", photoModel.getId());
-            return new ResponseEntity<>(HttpStatus.LOCKED);
-        }
+        PhotoDTO photoDTO = getInfo(id).getBody();
         HttpHeaders headers = new HttpHeaders();
-        File photo = ioUtils.getPhotoFile(photoModel);
+        File photo = ioUtils.getPhotoFile(photoDTO.toPhotoModel());
         if (photo == null || !photo.exists()) {
-            log.error("IN getImage - physically Photo #{} not available", photoModel.getId());
+            log.error("IN getImage - physically Photo #{} not available", photoDTO.getId());
             return new ResponseEntity<>(HttpStatus.GONE);
         }
-        headers.setContentType(photoModel.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
+        headers.setContentType(photoDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
         headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
 
         return new ResponseEntity<>(ioUtils.toByteArray(photo),
