@@ -46,14 +46,14 @@ public class StagingServiceImpl implements StagingService {
     @Override
     public List<StagingModel> findAll() {
         List<StagingModel> models = stagingRepository.findAll();
-        log.info("IN findAll - {} StagingModel", models.size());
+        log.debug("IN findAll - {} StagingModel", models.size());
         return models;
     }
 
     @Override
     public Optional<StagingModel> findById(Long id) {
         Optional<StagingModel> stagingModel = stagingRepository.findById(id);
-        log.info("IN findById - Presented? {}", stagingModel.isPresent());
+        log.debug("IN findById - Presented? {}", stagingModel.isPresent());
 
         return stagingModel;
     }
@@ -61,7 +61,7 @@ public class StagingServiceImpl implements StagingService {
     @Override
     public Optional<StagingModel> findByUUID(String uuid) {
         Optional<StagingModel> stagingModel = findAll().stream().filter(x -> x.getUuid().equals(uuid)).findFirst();
-        log.info("IN findByUUID - Presented? {}", stagingModel.isPresent());
+        log.debug("IN findByUUID - Presented? {}", stagingModel.isPresent());
 
         return stagingModel;
     }

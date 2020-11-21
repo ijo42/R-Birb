@@ -5,6 +5,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+import ru.ijo42.rbirb.model.StagingModel;
+import ru.ijo42.rbirb.model.Status;
 import ru.ijo42.rbirb.model.dto.PhotoDTO;
 import ru.ijo42.rbirb.model.dto.StagingDTO;
 import ru.ijo42.rbirb.repository.StagingRepository;
@@ -25,7 +27,7 @@ public class StagingController {
         this.stagingService = stagingService;
     }
 
-    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<StagingDTO>> getList() {
         return new ResponseEntity<>(stagingRepository.findAll().stream().
                 map(StagingDTO::new).collect(Collectors.toList()), HttpStatus.OK);
@@ -51,6 +53,20 @@ public class StagingController {
             return new ResponseEntity<>(ex.getStatusCode());
         }
         return new ResponseEntity<>(dto, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PhotoDTO>> acceptAllUnProcessed() {
+        List<PhotoDTO> photoDTOS;
+        try {
+            photoDTOS = stagingRepository.findAll().parallelStream().filter(m -> m.getStatus() == Status.ACTIVE)
+                    .filter(m -> m.getModerator() == -1).map(StagingModel::getId).map(stagingService::accept).map(PhotoDTO::new)
+                    .collect(Collectors.toList());
+        } catch (HttpClientErrorException ex) {
+            return new ResponseEntity<>(ex.getStatusCode());
+        }
+        return new ResponseEntity<>(photoDTOS, HttpStatus.OK);
+
     }
 
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
