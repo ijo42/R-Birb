@@ -63,13 +63,16 @@ public class PublicController {
 
     @GetMapping(value = "/{id}")
     public ResponseEntity<byte[]> getImage(@PathVariable("id") long id) {
-        PhotoDTO photoDTO = getInfo(id).getBody();
-        HttpHeaders headers = new HttpHeaders();
+        ResponseEntity<PhotoDTO> resp = getInfo(id);
+        PhotoDTO photoDTO;
+        if (resp.getStatusCode() != HttpStatus.OK || (photoDTO = resp.getBody()) == null)
+            return new ResponseEntity<>(resp.getStatusCode());
         File photo = ioUtils.getPhotoFile(photoDTO.toPhotoModel());
         if (photo == null || !photo.exists()) {
             log.error("IN getImage - physically Photo #{} not available", photoDTO.getId());
             return new ResponseEntity<>(HttpStatus.GONE);
         }
+        HttpHeaders headers = new HttpHeaders();
         headers.setContentType(photoDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
         headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
 
@@ -136,7 +139,7 @@ public class PublicController {
             List<PhotoModel> models = getByPredicate(photoModel -> !photoModel.isAnimated());
             if (models.size() < id)
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            return getImage(models.get((int) id).getId());
+            return getImage(models.get((int) id + 1).getId());
         } catch (HttpStatusCodeException ex) {
             return new ResponseEntity<>(ex.getStatusCode());
         }
@@ -148,7 +151,7 @@ public class PublicController {
             List<PhotoModel> models = getByPredicate(PhotoModel::isAnimated);
             if (models.size() < id)
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            return getImage(models.get((int) id).getId());
+            return getImage(models.get((int) id + 1).getId());
         } catch (HttpStatusCodeException ex) {
             return new ResponseEntity<>(ex.getStatusCode());
         }
