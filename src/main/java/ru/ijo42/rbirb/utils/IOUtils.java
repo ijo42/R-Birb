@@ -31,7 +31,7 @@ public class IOUtils {
     @Value("${upload.path.staging}")
     private String staging;
 
-    @Value("${upload.path.picture}")
+    @Value("${upload.path.photo}")
     private String picture;
 
     @Value("${spring.servlet.multipart.max-file-size}")
