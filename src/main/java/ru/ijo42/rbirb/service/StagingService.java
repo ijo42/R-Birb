@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface StagingService {
     List<StagingModel> findAll();
 
+    Optional<StagingModel> getNext();
+
     Optional<StagingModel> findById(Long id);
 
     Optional<StagingModel> findByUUID(String uuid);

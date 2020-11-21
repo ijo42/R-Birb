@@ -51,6 +51,14 @@ public class StagingServiceImpl implements StagingService {
     }
 
     @Override
+    public Optional<StagingModel> getNext() {
+        Optional<StagingModel> stagingModel = findAll().stream().filter(x -> x.getStatus() == Status.ACTIVE).findAny();
+        log.debug("IN getNext - Presented? {}", stagingModel.isPresent());
+
+        return stagingModel;
+    }
+
+    @Override
     public Optional<StagingModel> findById(Long id) {
         Optional<StagingModel> stagingModel = stagingRepository.findById(id);
         log.debug("IN findById - Presented? {}", stagingModel.isPresent());
@@ -175,10 +183,12 @@ public class StagingServiceImpl implements StagingService {
             stagingModel = stagingRepository.save(stagingModel);
 
             PhotoModel photoModel = new PhotoModel(stagingModel.getUploader(), AuthenticationProvider.getModeratorID(), stagingModel.isAnimated());
+
             photoModel.setStatus(Status.NOT_YET);
             photoModel.setUpdated(Date.from(Instant.now()));
             photoModel.setAnimated(stagingModel.isAnimated());
             photoModel.setCreated(stagingModel.getCreated());
+            photoModel.setModerator(stagingModel.getModerator());
 
             photoModel = photoRepository.save(photoModel);
 

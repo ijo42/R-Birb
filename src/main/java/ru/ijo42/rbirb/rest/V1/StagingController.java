@@ -13,6 +13,7 @@ import ru.ijo42.rbirb.repository.StagingRepository;
 import ru.ijo42.rbirb.service.StagingService;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -42,6 +43,14 @@ public class StagingController {
             return new ResponseEntity<>(ex.getStatusCode());
         }
         return new ResponseEntity<>(dto, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/next", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StagingDTO> getNextUnprocessed() {
+        Optional<StagingModel> st = stagingService.getNext();
+        if (st.isEmpty())
+            return new ResponseEntity<>(new StagingDTO(HttpStatus.NO_CONTENT.getReasonPhrase()), HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(new StagingDTO(st.get()), HttpStatus.OK);
     }
 
     @PostMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
