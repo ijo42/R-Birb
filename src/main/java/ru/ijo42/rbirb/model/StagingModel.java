@@ -17,13 +17,12 @@ import javax.persistence.Table;
 @EqualsAndHashCode(callSuper = true)
 public class StagingModel extends BaseEntity {
 
-    private String uploader;
-
     private String uuid;
+
+    private String uploader;
 
     private long moderator;
 
     @Column(name = "animated")
     private boolean isAnimated;
-
 }

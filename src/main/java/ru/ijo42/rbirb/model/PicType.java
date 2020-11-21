@@ -1,14 +1,11 @@
 package ru.ijo42.rbirb.model;
 
 public enum PicType {
+    /*
+     * PNG: any static pictures converts to PNG
+     * GIF: .gif file that has more that one frame
+     */
     PNG, GIF;
-
-    public static PicType parseOf(String str) {
-        if (str.endsWith("gif"))
-            return GIF;
-        else
-            return PNG;
-    }
 
     @Override
     public String toString() {
