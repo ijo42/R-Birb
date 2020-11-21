@@ -2,7 +2,10 @@ package ru.ijo42.rbirb.rest.V1;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -74,7 +77,7 @@ public class PublicController {
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(photoDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
-        headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
+        //headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
 
         return new ResponseEntity<>(ioUtils.toByteArray(photo),
                 headers, HttpStatus.OK);
