@@ -2,10 +2,7 @@ package ru.ijo42.rbirb.rest.V1;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -77,7 +74,7 @@ public class PublicController {
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(photoDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
-        //headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
+        headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
 
         return new ResponseEntity<>(ioUtils.toByteArray(photo),
                 headers, HttpStatus.OK);
@@ -107,20 +104,11 @@ public class PublicController {
                 collect(Collectors.toList()), HttpStatus.OK);
     }
 
-    @GetMapping("/rand")
-    public ResponseEntity<byte[]> getRandomlyByte() {
-        try {
-            return getImage(getRandomByPredicate(x -> true).getId());
-        } catch (HttpStatusCodeException ex) {
-            return new ResponseEntity<>(ex.getStatusCode());
-        }
-    }
-
     @GetMapping("/random")
     public RedirectView getRandomly() {
         try {
             return new RedirectView("/api/v1/" +
-                    getRandomByPredicate(x -> true).getId());
+                    getRandomByPredicate(PicturePredicate.ANY).getId());
         } catch (HttpStatusCodeException ex) {
             return new RedirectView("");
         }
@@ -129,7 +117,7 @@ public class PublicController {
     @GetMapping(value = "/random/info", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PhotoDTO> getInfoRandomly() {
         try {
-            PhotoModel photoModel = getRandomByPredicate(x -> true);
+            PhotoModel photoModel = getRandomByPredicate(PicturePredicate.ANY);
             return new ResponseEntity<>(new PhotoDTO(photoModel), HttpStatus.OK);
         } catch (HttpStatusCodeException ex) {
             return new ResponseEntity<>(ex.getStatusCode());
@@ -139,10 +127,10 @@ public class PublicController {
     @GetMapping("/{id}.png")
     public ResponseEntity<byte[]> getStrictPng(@PathVariable("id") long id) {
         try {
-            List<PhotoModel> models = getByPredicate(photoModel -> !photoModel.isAnimated());
-            if (models.size() < id)
+            List<PhotoModel> models = getByPredicate(PicturePredicate.STATIC);
+            if (models.size() == 0)
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            return getImage(models.get((int) id + 1).getId());
+            return getImage(models.get(operateID(id, models.size())).getId());
         } catch (HttpStatusCodeException ex) {
             return new ResponseEntity<>(ex.getStatusCode());
         }
@@ -151,28 +139,10 @@ public class PublicController {
     @GetMapping("/{id}.gif")
     public ResponseEntity<byte[]> getStrictGif(@PathVariable("id") long id) {
         try {
-            List<PhotoModel> models = getByPredicate(PhotoModel::isAnimated);
-            if (models.size() < id)
+            List<PhotoModel> models = getByPredicate(PicturePredicate.ANIMATED);
+            if (models.size() == 0)
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            return getImage(models.get((int) id + 1).getId());
-        } catch (HttpStatusCodeException ex) {
-            return new ResponseEntity<>(ex.getStatusCode());
-        }
-    }
-
-    @GetMapping("/rand/png")
-    public ResponseEntity<byte[]> getRandomlyPngByte() {
-        try {
-            return getImage(getRandomByPredicate(photoModel -> !photoModel.isAnimated()).getId());
-        } catch (HttpStatusCodeException ex) {
-            return new ResponseEntity<>(ex.getStatusCode());
-        }
-    }
-
-    @GetMapping("/rand/gif")
-    public ResponseEntity<byte[]> getRandomlyGifByte() {
-        try {
-            return getImage(getRandomByPredicate(PhotoModel::isAnimated).getId());
+            return getImage(models.get(operateID(id, models.size())).getId());
         } catch (HttpStatusCodeException ex) {
             return new ResponseEntity<>(ex.getStatusCode());
         }
@@ -182,7 +152,7 @@ public class PublicController {
     public RedirectView getRandomlyPng() {
         try {
             return new RedirectView("/api/v1/" +
-                    getRandomByPredicate(photoModel -> !photoModel.isAnimated()).getId());
+                    getRandomByPredicate(PicturePredicate.STATIC).getId());
         } catch (HttpStatusCodeException ex) {
             return new RedirectView("");
         }
@@ -192,27 +162,47 @@ public class PublicController {
     public RedirectView getRandomlyGif() {
         try {
             return new RedirectView("/api/v1/" +
-                    getRandomByPredicate(PhotoModel::isAnimated).getId());
+                    getRandomByPredicate(PicturePredicate.ANIMATED).getId());
         } catch (HttpStatusCodeException ex) {
             return new RedirectView("");
         }
     }
 
-    public PhotoModel getRandomByPredicate(Predicate<? super PhotoModel> predicate) throws HttpClientErrorException {
+    public PhotoModel getRandomByPredicate(PicturePredicate predicate) throws HttpClientErrorException {
         List<PhotoModel> photos = getByPredicate(predicate);
         Collections.shuffle(photos);
 
         return photos.get(0);
     }
 
-    public List<PhotoModel> getByPredicate(Predicate<? super PhotoModel> predicate) throws HttpClientErrorException {
+    public List<PhotoModel> getByPredicate(PicturePredicate predicate) throws HttpClientErrorException {
         List<PhotoModel> photos = photoRepository.findAll().stream().
-                filter(x -> x.getStatus() == Status.ACTIVE).
-                filter(predicate).collect(Collectors.toList());
+                filter(PicturePredicate.ACTIVE.predicate).
+                filter(predicate.predicate).collect(Collectors.toList());
         if (photos.size() < 1)
             throw new HttpClientErrorException(HttpStatus.NO_CONTENT);
 
         return photos;
+    }
+
+    public int operateID(long id, int size) {
+        id = Math.abs(id + (id >= 0 ? -1 : +1)); // two-side shift
+        id %= size;
+
+        return Math.toIntExact(id);
+    }
+
+    enum PicturePredicate {
+        ANIMATED(PhotoModel::isAnimated),
+        STATIC(photoModel -> !photoModel.isAnimated()),
+        ANY(m -> true),
+        ACTIVE(photoModel -> photoModel.getStatus() == Status.ACTIVE);
+
+        public Predicate<? super PhotoModel> predicate;
+
+        PicturePredicate(Predicate<? super PhotoModel> predicate) {
+            this.predicate = predicate;
+        }
     }
 
 }
