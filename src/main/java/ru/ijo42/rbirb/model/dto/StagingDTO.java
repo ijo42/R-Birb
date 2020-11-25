@@ -35,4 +35,15 @@ public class StagingDTO {
     public StagingDTO(String error) {
         this.error = error;
     }
+
+    public StagingModel toStagingModel() {
+        StagingModel stagingModel = new StagingModel();
+        stagingModel.setId(getId());
+        stagingModel.setUuid(getUuid());
+        stagingModel.setUploader(getUploader());
+        stagingModel.setModerator(getModerator());
+        stagingModel.setAnimated(isAnimated());
+        stagingModel.setStatus(getStatus());
+        return stagingModel;
+    }
 }
