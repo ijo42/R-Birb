@@ -1,6 +1,5 @@
 package ru.ijo42.rbirb.utils;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
@@ -70,15 +69,17 @@ public class IOUtils {
         return getStagingPhotoFile(stagingModel).delete();
     }
 
-    @SneakyThrows
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public boolean transferStaging(StagingModel stagingModel, PhotoModel photoModel) {
         Path staging = getStagingPhotoFile(stagingModel).toPath(), photo = getPhotoFile(photoModel).toPath();
         try {
             return Files.move(staging, photo).toFile().exists();
         } catch (IOException e) {
             e.printStackTrace();
-            Files.deleteIfExists(staging);
-            Files.deleteIfExists(photo);
+            if (staging.toFile().exists())
+                staging.toFile().delete();
+            if (photo.toFile().exists())
+                photo.toFile().delete();
             return false;
         }
     }
