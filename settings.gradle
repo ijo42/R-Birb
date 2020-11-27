@@ -1,2 +1,6 @@
 rootProject.name = 'RBirb'
 include 'backend'
+file('integrations').eachDir { sub ->
+    include 'integrations:' + sub.name
+    findProject(':integrations:' + sub.name)?.name = sub.name
+}

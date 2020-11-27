@@ -1,4 +1,7 @@
 HELP.md
+*.png
+*.gif
+buildnumber
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
