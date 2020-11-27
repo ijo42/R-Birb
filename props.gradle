@@ -1,0 +1,4 @@
+project.ext {
+    archivesBaseName = 'RBirb'
+    group = 'ru.ijo42.rbirb'
+}

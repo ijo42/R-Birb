@@ -1,0 +1,53 @@
+plugins {
+    id 'net.kyori.blossom' version "1.1.0" apply false
+    id "com.github.johnrengelman.shadow" version "4.0.4" apply false
+    id 'java'
+}
+
+apply from: 'props.gradle'
+apply from: "https://gist.github.com/ijo42/5497480a99a7c8003d9862db5432625c/raw/cc9057de8aeca43e9747d85b51c9b322114f5009/buildscript.groovy"
+group = rootProject.getGroup()
+archivesBaseName = rootProject.getArchivesBaseName()
+
+subprojects {
+    apply plugin: 'idea'
+    apply plugin: 'java'
+    apply plugin: "net.kyori.blossom"
+    apply plugin: "com.github.johnrengelman.shadow"
+
+    version = rootProject.getVersion()
+    group = rootProject.getGroup()
+    archivesBaseName = rootProject.getArchivesBaseName()
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        jcenter()
+        maven { url 'https://jitpack.io/' }
+    }
+
+    jar {
+        manifest {
+            attributes([
+                    "Specification-Title": rootProject.getName(),
+                    "Specification-Vendor": "ijo42",
+                    "Specification-Version": "1", // We are version 1 of ourselves
+                    "Implementation-Title": rootProject.getName(),
+                    "Implementation-Version": rootProject.getVersion(),
+                    "Implementation-Vendor" :"ijo42",
+                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+            ])
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        options.incremental = true // one flag, and things will get so MUCH faster
+    }
+    sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '15'
+
+    /*apply from: "https://gist.githubusercontent.com/ijo42/6b215e76269a72f37194b924ddda038e/raw/signjar.groovy"*/
+}
+tasks.getByPath(':jar').enabled = false
+defaultTasks 'build' 
