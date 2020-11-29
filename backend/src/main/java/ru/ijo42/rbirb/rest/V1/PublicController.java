@@ -2,7 +2,12 @@ package ru.ijo42.rbirb.rest.V1;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -12,20 +17,22 @@ import ru.ijo42.rbirb.model.PhotoModel;
 import ru.ijo42.rbirb.model.StagingModel;
 import ru.ijo42.rbirb.model.Status;
 import ru.ijo42.rbirb.model.dto.PhotoDTO;
-import ru.ijo42.rbirb.model.dto.StagingDTO;
 import ru.ijo42.rbirb.repository.PhotoRepository;
 import ru.ijo42.rbirb.service.StagingService;
 import ru.ijo42.rbirb.utils.IOUtils;
 
 import java.io.File;
-import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentRequest;
 
 @Slf4j
 @RestController
@@ -44,25 +51,31 @@ public class PublicController {
         this.photoRepository = photoRepository;
     }
 
-    @PostMapping(value = "/upload", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<StagingDTO> uploadFile(StagingModel stagingModel,
-                                                 @RequestParam("file") MultipartFile file) throws IOException {
-        String originalFilename;
-        if (file == null || (originalFilename = file.getOriginalFilename()) == null)
-            return new ResponseEntity<>(HttpStatus.LENGTH_REQUIRED);
-        if (Arrays.stream(acceptable).map(originalFilename::endsWith).findAny().isEmpty())
-            return new ResponseEntity<>(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
-        StagingModel model;
-        try {
-            model = stagingService.upload(stagingModel, file);
-        } catch (HttpClientErrorException ex) {
-            return new ResponseEntity<>(new StagingDTO(ex.getStatusText()), ex.getStatusCode());
-        }
-        return new ResponseEntity<>(new StagingDTO(model), HttpStatus.ACCEPTED);
+    @PostMapping(value = "/upload",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = { "multipart/form-data" })
+    public Callable<ResponseEntity<?>> uploadFile(StagingModel stagingModel,
+                                                 @RequestParam("file") MultipartFile file) {
+        return () -> {
+            String originalFilename;
+            if (file == null || (originalFilename = file.getOriginalFilename()) == null)
+                return new ResponseEntity<>(HttpStatus.LENGTH_REQUIRED);
+            if (Arrays.stream(acceptable).map(originalFilename::endsWith).findAny().isEmpty())
+                return new ResponseEntity<>(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+            StagingModel model;
+            try {
+                model = stagingService.upload(stagingModel, file);
+            } catch (HttpClientErrorException ex) {
+                return ResponseEntity.badRequest().body(ex.getStatusCode());
+            }
+            URI location = fromCurrentRequest().buildAndExpand(model.getId()).toUri();
+            return ResponseEntity.created(location).build();
+        };
     }
 
-    @GetMapping(value = "/{id}")
-    public ResponseEntity<byte[]> getImage(@PathVariable("id") long id) {
+    @GetMapping(value = "/{id}",
+            produces = { "multipart/form-data" })
+    public ResponseEntity<Resource> getImage(@PathVariable("id") long id) {
         ResponseEntity<PhotoDTO> resp = getInfo(id);
         PhotoDTO photoDTO;
         if (resp.getStatusCode() != HttpStatus.OK || (photoDTO = resp.getBody()) == null)
@@ -70,14 +83,13 @@ public class PublicController {
         File photo = ioUtils.getPhotoFile(photoDTO.toPhotoModel());
         if (photo == null || !photo.exists()) {
             log.error("IN getImage - physically Photo #{} not available", photoDTO.getId());
-            return new ResponseEntity<>(HttpStatus.GONE);
+            return ResponseEntity.notFound().build();
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(photoDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
-        headers.setCacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).getHeaderValue());
 
-        return new ResponseEntity<>(ioUtils.toByteArray(photo),
-                headers, HttpStatus.OK);
+        return ResponseEntity.ok()
+                .contentType(photoDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG)
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS))
+                .body(new FileSystemResource(photo));
     }
 
     @GetMapping(value = "/{id}/info", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -125,7 +137,7 @@ public class PublicController {
     }
 
     @GetMapping("/{id}.png")
-    public ResponseEntity<byte[]> getStrictPng(@PathVariable("id") long id) {
+    public ResponseEntity<Resource> getStrictPng(@PathVariable("id") long id) {
         try {
             List<PhotoModel> models = getByPredicate(PicturePredicate.STATIC);
             if (models.size() == 0)
@@ -137,7 +149,7 @@ public class PublicController {
     }
 
     @GetMapping("/{id}.gif")
-    public ResponseEntity<byte[]> getStrictGif(@PathVariable("id") long id) {
+    public ResponseEntity<Resource> getStrictGif(@PathVariable("id") long id) {
         try {
             List<PhotoModel> models = getByPredicate(PicturePredicate.ANIMATED);
             if (models.size() == 0)
