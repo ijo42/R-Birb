@@ -34,7 +34,7 @@ public class StagingListHandler extends AbstractBaseHandler {
 
         MessageBuilder mb = MessageBuilder.create(chatId);
         for (StagingDTO dto : stagingDTO)
-            if(dto.getStatus() == Status.ACTIVE)
+            if(dto.getStatus() == Status.ACTIVE && dto.getModerator() == -1)
                 mb.line("ID: " + dto.getId()+ "\nUPLOADER: " + dto.getUploader());
 
         return List.of(mb.build());

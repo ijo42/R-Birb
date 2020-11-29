@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -73,9 +75,12 @@ public class Bot extends TelegramLongPollingBot {
         log.debug("Start report sent to Admin");
     }
 
-    public void executeWithExceptionCheck(SendPhoto sendImageUploadingAFile) {
+    public void executeWithExceptionCheck(PartialBotApiMethod<Message> sendImageUploadingAFile) {
         try {
-            execute(sendImageUploadingAFile);
+            if(sendImageUploadingAFile instanceof SendPhoto)
+                execute((SendPhoto) sendImageUploadingAFile);
+            else if(sendImageUploadingAFile instanceof SendAnimation)
+                execute((SendAnimation) sendImageUploadingAFile);
             log.debug("Executed {}", sendImageUploadingAFile);
         } catch (TelegramApiException e) {
             log.error("Exception while sending message {} to user: {}", sendImageUploadingAFile, e.getMessage());

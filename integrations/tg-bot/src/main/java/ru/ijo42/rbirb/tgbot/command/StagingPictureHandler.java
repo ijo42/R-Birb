@@ -9,6 +9,8 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -56,38 +58,45 @@ public class StagingPictureHandler extends AbstractBaseHandler {
 
 
     @SneakyThrows
-    public SendPhoto sendImageUploadingAFile(InputStream st, String name, int id, long chatId) {
+    public PartialBotApiMethod<Message> sendImageUploadingAFile(InputStream st, String name, int id, long chatId) {
         List<InlineKeyboardButton> i = List.of(
         InlineKeyboardButton.builder().text("ACCEPT").callbackData("accept@" + id).build(),
         InlineKeyboardButton.builder().text("DECLINE").callbackData("decline@" + id).build()
         );
-        return SendPhoto.builder().chatId(String.valueOf(chatId)).photo(
-                new InputFile(st, name)).replyMarkup(
-                InlineKeyboardMarkup.builder().keyboard(Collections.singleton(i)).build()
-        ).build();
+        if(name.endsWith(".png"))
+            return SendPhoto.builder().chatId(String.valueOf(chatId)).photo(
+                    new InputFile(st, name)).replyMarkup(
+                    InlineKeyboardMarkup.builder().keyboard(Collections.singleton(i)).build()
+            ).build();
+        else
+            return SendAnimation.builder().chatId(String.valueOf(chatId)).animation(
+                    new InputFile(st, name)).replyMarkup(
+                    InlineKeyboardMarkup.builder().keyboard(Collections.singleton(i)).build()
+            ).build();
     }
 
     public List<BotApiMethod<Message>> processButton(Update update){
-        String msg = update.getInlineQuery().getQuery();
+        String msg = update.getCallbackQuery().getData();
+        int userId =  update.getCallbackQuery().getFrom().getId();
         if(msg.startsWith("accept"))
-            accept(Integer.parseInt(msg.substring("accept@".length())), update.getMessage().getFrom().getId());
+            accept(Integer.parseInt(msg.substring("accept@".length())),userId);
         else
-            decline(Integer.parseInt(msg.substring("decline@".length())), update.getMessage().getFrom().getId());
-        return List.of(MessageBuilder.create(update.getMessage().getFrom().getId())
+            decline(Integer.parseInt(msg.substring("decline@".length())), userId);
+        return List.of(MessageBuilder.create(userId)
                 .line("ok")
                 .build());
     }
     public void decline(int id, int userId){
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, userService.getToken(userId));
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>("", headers);
 
         ResponseEntity<String> result = restTemplate.exchange(restEndpoint + "/staging/" + id, HttpMethod.DELETE, entity, String.class);
     }
     public void accept(int id, int userId){
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, userService.getToken(userId));
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+        HttpEntity<String> entity = new HttpEntity<>("", headers);
 
         ResponseEntity<String> result = restTemplate.exchange(restEndpoint + "/staging/" + id, HttpMethod.POST, entity, String.class);
     }
