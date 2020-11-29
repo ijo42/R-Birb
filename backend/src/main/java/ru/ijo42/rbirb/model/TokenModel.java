@@ -40,8 +40,4 @@ public class TokenModel extends BaseEntity implements Token {
         return extendedInformation;
     }
 
-    public TokenModel setStatusStreamed(Status status) {
-        this.setStatus(status);
-        return this;
-    }
 }

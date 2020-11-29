@@ -8,13 +8,17 @@ import java.util.Optional;
 public interface TokenService {
     List<TokenModel> findAll();
 
+    boolean isAvailable(long id);
+
     Optional<TokenModel> findByToken(String token);
 
     Optional<TokenModel> findById(Long id);
 
     TokenModel register(TokenModel acceptor, String extendedInformation);
 
-    void deleteById(Long id);
+    String genToken();
 
-    void deleteByToken(String token);
+    void disableById(Long id);
+
+    void disableByToken(String token);
 }

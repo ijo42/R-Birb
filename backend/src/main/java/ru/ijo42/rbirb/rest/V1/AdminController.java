@@ -27,13 +27,13 @@ public class AdminController {
 
     @DeleteMapping(value = "/id/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<TokenModel> deleteAcceptor(@PathVariable("id") long id) {
-        tokenService.deleteById(id);
+        tokenService.disableById(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @DeleteMapping(value = "/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<TokenModel> deleteAcceptor(@PathVariable("token") String token) {
-        tokenService.deleteByToken(token);
+        tokenService.disableByToken(token);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

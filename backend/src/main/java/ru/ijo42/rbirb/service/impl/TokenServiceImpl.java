@@ -7,9 +7,8 @@ import ru.ijo42.rbirb.model.Status;
 import ru.ijo42.rbirb.model.TokenModel;
 import ru.ijo42.rbirb.repository.AcceptorsRepository;
 import ru.ijo42.rbirb.service.TokenService;
+import ru.ijo42.rbirb.utils.IOUtils;
 
-import java.sql.Date;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +28,11 @@ public class TokenServiceImpl implements TokenService {
         List<TokenModel> acceptors = acceptorsRepository.findAll();
         log.debug("IN findAll - {} acceptors", acceptors.size());
         return acceptors;
+    }
+
+    @Override
+    public boolean isAvailable(long id) {
+        return findById(id).isPresent();
     }
 
     @Override
@@ -53,44 +57,45 @@ public class TokenServiceImpl implements TokenService {
             newToken.setExtendedInformation("");
         newToken.setToken(genToken());
         newToken.setStatus(Status.ACTIVE);
-        newToken.setCreated(Date.from(Instant.now()));
-        newToken.setUpdated(Date.from(Instant.now()));
+        newToken.setCreated(IOUtils.getNow());
+        newToken.setUpdated(IOUtils.getNow());
 
         TokenModel savedToken = acceptorsRepository.save(newToken);
 
         Optional<TokenModel> baseToken = findById(1L);
         if (baseToken.isPresent() && baseToken.get().getStatus() == Status.ACTIVE)
-            acceptorsRepository.save(baseToken.get().setStatusStreamed(Status.DEACTIVATED));
+            disable(baseToken.get());
 
         log.info("IN registered - Token #{} '{}'", savedToken.getId(), savedToken.getExtendedInformation());
         return savedToken;
     }
 
-    private String genToken() {
+    @Override
+    public String genToken() {
         return (UUID.randomUUID().toString().replaceAll("-", "").substring(16));
     }
 
-    public void delete(TokenModel tokenModel) {
-        tokenModel.setStatus(Status.DELETED);
-        tokenModel.setUpdated(Date.from(Instant.now()));
+    public void disable(TokenModel tokenModel) {
+        tokenModel.setStatus(Status.DEACTIVATED);
+        tokenModel.setUpdated(IOUtils.getNow());
         acceptorsRepository.save(tokenModel);
-        log.info("IN delete - token #{}", tokenModel.getId());
+        log.info("IN disable - token #{}", tokenModel.getId());
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void disableById(Long id) {
         Optional<TokenModel> modelOptional = findById(id);
-        modelOptional.ifPresentOrElse(this::delete, () -> {
-            log.error("IN deleteById - Token #{} not found", id);
+        modelOptional.ifPresentOrElse(this::disable, () -> {
+            log.error("IN disableById - Token #{} not found", id);
             throw new UsernameNotFoundException("Token #%d not found".formatted(id));
         });
     }
 
     @Override
-    public void deleteByToken(String token) {
+    public void disableByToken(String token) {
         Optional<TokenModel> modelOptional = findByToken(token);
-        modelOptional.ifPresentOrElse(this::delete, () -> {
-            log.error("IN deleteById - Token '{}' not found", token);
+        modelOptional.ifPresentOrElse(this::disable, () -> {
+            log.error("IN disableById - Token '{}' not found", token);
             throw new UsernameNotFoundException("Token '%s' not found".formatted(token));
         });
     }

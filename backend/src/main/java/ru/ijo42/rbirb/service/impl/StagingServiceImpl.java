@@ -107,8 +107,8 @@ public class StagingServiceImpl implements StagingService {
 
         stagingModel.setModerator(-1);
         stagingModel.setStatus(Status.ACTIVE);
-        stagingModel.setCreated(Date.from(Instant.now()));
-        stagingModel.setUpdated(Date.from(Instant.now()));
+        stagingModel.setCreated(IOUtils.getNow());
+        stagingModel.setUpdated(IOUtils.getNow());
         if (stagingModel.getUploader() == null)
             stagingModel.setUploader("ANONYMOUS");
 
@@ -136,7 +136,7 @@ public class StagingServiceImpl implements StagingService {
             throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         stagingModel.setStatus(Status.DELETED);
-        stagingModel.setUpdated(Date.from(Instant.now()));
+        stagingModel.setUpdated(IOUtils.getNow());
         stagingModel.setModerator(AuthenticationProvider.getModeratorID());
         stagingRepository.save(stagingModel);
         log.info("IN deleteById - Staging #{}", stagingModel.getId());
@@ -185,14 +185,14 @@ public class StagingServiceImpl implements StagingService {
 
             stagingModel.setModerator(AuthenticationProvider.getModeratorID());
             stagingModel.setStatus(Status.NOT_YET);
-            stagingModel.setUpdated(Date.from(Instant.now()));
+            stagingModel.setUpdated(IOUtils.getNow());
 
             stagingModel = stagingRepository.save(stagingModel);
 
             PhotoModel photoModel = new PhotoModel(stagingModel.getUploader(), AuthenticationProvider.getModeratorID(), stagingModel.isAnimated());
 
             photoModel.setStatus(Status.NOT_YET);
-            photoModel.setUpdated(Date.from(Instant.now()));
+            photoModel.setUpdated(IOUtils.getNow());
             photoModel.setAnimated(stagingModel.isAnimated());
             photoModel.setCreated(stagingModel.getCreated());
             photoModel.setModerator(stagingModel.getModerator());
@@ -205,11 +205,11 @@ public class StagingServiceImpl implements StagingService {
 
             }
             stagingModel.setStatus(Status.DEACTIVATED);
-            stagingModel.setUpdated(Date.from(Instant.now()));
+            stagingModel.setUpdated(IOUtils.getNow());
             stagingRepository.save(stagingModel);
 
             photoModel.setStatus(Status.ACTIVE);
-            photoModel.setUpdated(Date.from(Instant.now()));
+            photoModel.setUpdated(IOUtils.getNow());
             out[ 0 ] = photoRepository.save(photoModel);
         }, () -> {
             log.error("IN accept - Staging #{} not found", id);
@@ -236,7 +236,7 @@ public class StagingServiceImpl implements StagingService {
             }
 
             stagingModel.setModerator(AuthenticationProvider.getModeratorID());
-            stagingModel.setUpdated(Date.from(Instant.now()));
+            stagingModel.setUpdated(IOUtils.getNow());
             stagingModel.setStatus(Status.DEACTIVATED);
 
             stagingRepository.save(stagingModel);

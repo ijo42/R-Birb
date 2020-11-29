@@ -3,20 +3,17 @@ package ru.ijo42.rbirb.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.unit.DataSize;
-import org.springframework.web.client.HttpClientErrorException;
 import ru.ijo42.rbirb.model.PhotoModel;
 import ru.ijo42.rbirb.model.PicType;
 import ru.ijo42.rbirb.model.StagingModel;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Date;
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -32,9 +29,6 @@ public class IOUtils {
 
     @Value("${upload.path.photo}")
     private String picture;
-
-    @Value("${spring.servlet.multipart.max-file-size}")
-    private DataSize maxFileSize;
 
     public File getUploadDir() {
         if (uploadDir != null)
@@ -69,6 +63,10 @@ public class IOUtils {
         return getStagingPhotoFile(stagingModel).delete();
     }
 
+    public boolean erasePhoto(PhotoModel photoModel) {
+        return getPhotoFile(photoModel).delete();
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public boolean transferStaging(StagingModel stagingModel, PhotoModel photoModel) {
         Path staging = getStagingPhotoFile(stagingModel).toPath(), photo = getPhotoFile(photoModel).toPath();
@@ -84,19 +82,7 @@ public class IOUtils {
         }
     }
 
-    public byte[] toByteArray(File file) {
-        if (file.length() > maxFileSize.toBytes()) {
-            throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        byte[] buffer = new byte[ (int) file.length() ];
-        try (InputStream ios = new FileInputStream(file)) {
-            if (ios.read(buffer) == -1) {
-                throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return buffer;
+    public static java.util.Date getNow() {
+        return Date.from(Instant.now());
     }
 }

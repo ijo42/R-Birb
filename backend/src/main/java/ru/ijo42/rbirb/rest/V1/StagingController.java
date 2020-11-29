@@ -1,10 +1,9 @@
 package ru.ijo42.rbirb.rest.V1;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import ru.ijo42.rbirb.model.StagingModel;
@@ -18,6 +17,7 @@ import ru.ijo42.rbirb.utils.IOUtils;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,28 +41,25 @@ public class StagingController {
                 map(StagingDTO::new).collect(Collectors.toList()), HttpStatus.OK);
     }
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<byte[]> getUnprocessedByID(@PathVariable("id") long id) {
-        try {
-            ResponseEntity<StagingDTO> resp = getUnprocessedInfoByID(id);
-            StagingDTO stagingDTO;
-            if (resp.getStatusCode() != HttpStatus.OK || (stagingDTO = resp.getBody()) == null)
-                return new ResponseEntity<>(resp.getStatusCode());
-            if (stagingDTO.getStatus() != Status.ACTIVE)
-                return new ResponseEntity<>(HttpStatus.LOCKED);
-            File stg = ioUtils.getStagingPhotoFile(stagingDTO.toStagingModel());
-            if (stg == null || !stg.exists()) {
-                log.error("IN getUnprocessedByID - physically Staging #{} not available", stagingDTO.getId());
-                return new ResponseEntity<>(HttpStatus.GONE);
-            }
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(stagingDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG);
-
-            return new ResponseEntity<>(ioUtils.toByteArray(stg),
-                    headers, HttpStatus.OK);
-        } catch (HttpClientErrorException ex) {
-            return new ResponseEntity<>(ex.getStatusCode());
+    @GetMapping(value = "/{id}",
+            produces = { "multipart/form-data" })
+    public ResponseEntity<Resource> getImage(@PathVariable("id") long id) {
+        ResponseEntity<StagingDTO> resp = getUnprocessedInfoByID(id);
+        StagingDTO stagingDTO;
+        if (resp.getStatusCode() != HttpStatus.OK || (stagingDTO = resp.getBody()) == null)
+            return new ResponseEntity<>(resp.getStatusCode());
+        if (stagingDTO.getStatus() != Status.ACTIVE)
+            return new ResponseEntity<>(HttpStatus.LOCKED);
+        File stg = ioUtils.getStagingPhotoFile(stagingDTO.toStagingModel());
+        if (stg == null || !stg.exists()) {
+            log.error("IN getUnprocessedByID - physically Staging #{} not available", stagingDTO.getId());
+            return new ResponseEntity<>(HttpStatus.GONE);
         }
+
+        return ResponseEntity.ok()
+                .contentType(stagingDTO.isAnimated() ? MediaType.IMAGE_GIF : MediaType.IMAGE_PNG)
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS))
+                .body(new FileSystemResource(stg));
     }
 
     @GetMapping(value = "/{id}/info", produces = MediaType.APPLICATION_JSON_VALUE)
