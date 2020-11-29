@@ -10,7 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.ijo42.rbirb.tgbot.annotations.BotCommand;
 import ru.ijo42.rbirb.tgbot.command.AbstractBaseHandler;
 import ru.ijo42.rbirb.tgbot.command.StagingPictureHandler;
-import ru.ijo42.rbirb.tgbot.command.UploadHandler;
+import ru.ijo42.rbirb.tgbot.model.User;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,27 +28,28 @@ public class UpdateReceiver {
             int userId = 0;
             long chatId = 0;
             String text = null;
-            if(update.hasMessage() && !update.getMessage().isGroupMessage() && (update.getMessage().hasPhoto() || update.getMessage().hasAnimation()))
-                return ((UploadHandler) handlers.stream().filter(x->x instanceof UploadHandler).
-                        findFirst().orElseThrow()).
-                        upload(update);
             if (isMessageWithText(update)) {
-                final Message message = update.getMessage();
-                    chatId = message.getChat().getId();
-                    userId = message.getFrom().getId();
+                Message message = update.getMessage();
+                User.State st = userService.get(message.getFrom().getId()).getState();
+                if (st != User.State.listen && st.predicate.test(update))
+                    return
+                            getHandler(st.cmd).handleOther(update);
+
+                chatId = message.getChat().getId();
+                userId = message.getFrom().getId();
                 text = message.getText();
                 log.debug("Update is text message {} from {} in {}", text, userId, chatId);
             } else if (update.hasCallbackQuery()) {
-                final CallbackQuery callbackQuery = update.getCallbackQuery();
+                CallbackQuery callbackQuery = update.getCallbackQuery();
                 userId = callbackQuery.getFrom().getId();
                 chatId = Long.parseLong(callbackQuery.getChatInstance());
                 text = callbackQuery.getData();
                 log.debug("Update is callback query {} from {} in {}", text, userId, chatId);
-                return ((StagingPictureHandler) handlers.stream().filter(x->x instanceof StagingPictureHandler).
-                        findFirst().orElseThrow()).processButton(update);
+                return handlers.stream().filter(x -> x instanceof StagingPictureHandler).
+                        findFirst().orElseThrow().handleOther(update);
             }
             if (text != null && userId != 0) {
-                return getHandler(text).authorizeAndHandle(userService.getOrCreate(userId), chatId, text);
+                return getHandler(text).authorizeAndHandle(userService.get(userId), chatId, text);
             }
 
             throw new UnsupportedOperationException();
@@ -63,8 +64,7 @@ public class UpdateReceiver {
                 .filter(h -> h.getClass()
                         .isAnnotationPresent(BotCommand.class))
                 .filter(h -> Stream.of(h.getClass()
-                        .getAnnotation(BotCommand.class)
-                        .command())
+                        .getAnnotation(BotCommand.class).command())
                         .anyMatch(c -> c.equalsIgnoreCase(extractCommand(text))))
                 .findAny()
                 .orElseThrow(UnsupportedOperationException::new);
