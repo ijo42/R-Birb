@@ -3,6 +3,7 @@ package ru.ijo42.rbirb.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ijo42.rbirb.model.PhotoModel;
@@ -16,8 +17,7 @@ import ru.ijo42.rbirb.service.StagingService;
 import ru.ijo42.rbirb.utils.IOUtils;
 import ru.ijo42.rbirb.utils.ImgConverter;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
@@ -83,7 +83,14 @@ public class StagingServiceImpl implements StagingService {
 
         File tmp = File.createTempFile(uuid, ".img");
         log.debug("Saving temp file to {}", tmp);
-        file.transferTo(tmp);
+
+        try (InputStream in = file.getInputStream();
+             OutputStream out = new FileOutputStream(tmp)) {
+            FileCopyUtils.copy(in, out);
+        }
+        catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
 
         PicType type = (originalFilename.endsWith("gif") && ImgConverter.isAnimated(tmp) ?
                 PicType.GIF : PicType.PNG);
