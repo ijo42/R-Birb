@@ -29,13 +29,13 @@ public class ModerateController {
         this.photoRepository = photoRepository;
     }
 
-    @GetMapping("/check/{id}")
-    public ResponseEntity<Boolean> checkToken(@PathVariable("id") long id) {
-        return ResponseEntity.ok(tokenService.isAvailable(id));
+    @GetMapping("/check")
+    public ResponseEntity<?> checkToken() {
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Boolean> disablePhoto(@PathVariable("id") long id){
+    public ResponseEntity<?> disablePhoto(@PathVariable("id") long id) {
         Optional<PhotoModel> modelOptional = photoRepository.findById(id);
         if (modelOptional.isEmpty())
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -53,7 +53,7 @@ public class ModerateController {
 
         delete(photoModel);
 
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok().build();
     }
 
     private void delete(PhotoModel photoModel) {
