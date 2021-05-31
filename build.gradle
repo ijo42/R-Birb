@@ -24,6 +24,7 @@ subprojects {
         mavenLocal()
         jcenter()
         maven { url 'https://jitpack.io/' }
+        maven { url 'https://repo.spring.io/snapshot' }
     }
 
     jar {
@@ -45,7 +46,7 @@ subprojects {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         options.incremental = true // one flag, and things will get so MUCH faster
     }
-    sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '15'
+    sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '16'
 
     /*apply from: "https://gist.githubusercontent.com/ijo42/6b215e76269a72f37194b924ddda038e/raw/signjar.groovy"*/
 }

@@ -1,3 +1,10 @@
+pluginManagement {
+    repositories {
+        maven { url 'https://repo.spring.io/snapshot' }
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'RBirb'
 include 'backend'
 file('integrations').eachDir { sub ->
