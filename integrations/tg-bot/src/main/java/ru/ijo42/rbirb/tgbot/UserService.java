@@ -13,7 +13,7 @@ import java.util.List;
 @Component
 @Slf4j
 public class UserService {
-    List<User> users = new ArrayList<>();
+    final List<User> users = new ArrayList<>();
 
     public User get(int userId) {
         return users.stream().filter(u -> u.getId() == userId).findFirst().orElseGet(() -> {

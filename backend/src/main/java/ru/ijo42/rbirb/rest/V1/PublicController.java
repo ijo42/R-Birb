@@ -210,7 +210,7 @@ public class PublicController {
         ANY(m -> true),
         ACTIVE(photoModel -> photoModel.getStatus() == Status.ACTIVE);
 
-        public Predicate<? super PhotoModel> predicate;
+        public final Predicate<? super PhotoModel> predicate;
 
         PicturePredicate(Predicate<? super PhotoModel> predicate) {
             this.predicate = predicate;

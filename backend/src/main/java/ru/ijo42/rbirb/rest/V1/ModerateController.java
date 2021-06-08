@@ -19,12 +19,10 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/v1/moderate")
 public class ModerateController {
-    private final TokenService tokenService;
     private final IOUtils ioUtils;
     private final PhotoRepository photoRepository;
 
-    public ModerateController(TokenService tokenService, IOUtils ioUtils, PhotoRepository photoRepository) {
-        this.tokenService = tokenService;
+    public ModerateController(IOUtils ioUtils, PhotoRepository photoRepository) {
         this.ioUtils = ioUtils;
         this.photoRepository = photoRepository;
     }

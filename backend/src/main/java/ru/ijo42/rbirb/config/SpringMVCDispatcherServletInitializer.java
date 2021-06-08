@@ -1,5 +1,6 @@
 package ru.ijo42.rbirb.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.web.filter.HiddenHttpMethodFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -18,13 +19,14 @@ public class SpringMVCDispatcherServletInitializer extends AbstractAnnotationCon
         return new Class[]{SpringConfig.class};
     }
 
+    @NotNull
     @Override
     protected String[] getServletMappings() {
         return new String[]{"/"};
     }
 
     @Override
-    public void onStartup(ServletContext aServletContext) throws ServletException {
+    public void onStartup(@NotNull ServletContext aServletContext) throws ServletException {
         super.onStartup(aServletContext);
         registerHiddenFieldFilter(aServletContext);
     }

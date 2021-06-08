@@ -47,10 +47,6 @@ public final class MessageBuilder {
         return this;
     }
 
-    public MessageBuilder buttonWithArguments(String text, String callbackData) {
-        return button(text, callbackData + " " + text);
-    }
-
     public SendMessage build() {
         SendMessage sendMessage = new SendMessage(String.valueOf(chatId), sb.toString());
         sendMessage.enableMarkdown(true);

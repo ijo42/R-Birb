@@ -28,7 +28,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             new AntPathRequestMatcher("/v1/admin/**")
     );
 
-    AuthenticationProvider provider;
+    final AuthenticationProvider provider;
 
     public SecurityConfiguration(final AuthenticationProvider authenticationProvider) {
         super();
@@ -39,11 +39,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(final AuthenticationManagerBuilder auth) {
         auth.authenticationProvider(provider);
     }
-
-    /*@Override
-    public void configure(final WebSecurity webSecurity) {
-        //webSecurity.ignoring().antMatchers("/token/**");
-    }*/
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
