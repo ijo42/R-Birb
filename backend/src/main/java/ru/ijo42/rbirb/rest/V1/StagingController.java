@@ -3,7 +3,10 @@ package ru.ijo42.rbirb.rest.V1;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import ru.ijo42.rbirb.model.StagingModel;
@@ -66,7 +69,7 @@ public class StagingController {
     public ResponseEntity<StagingDTO> getUnprocessedInfoByID(@PathVariable("id") long id) {
         StagingDTO dto;
         try {
-            dto = new StagingDTO(stagingRepository.getOne(id));
+            dto = new StagingDTO(stagingRepository.getById(id));
         } catch (HttpClientErrorException ex) {
             return new ResponseEntity<>(ex.getStatusCode());
         }

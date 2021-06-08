@@ -44,8 +44,8 @@ public class Bot extends TelegramLongPollingBot {
 
         if (messagesToSend != null && !messagesToSend.isEmpty()) {
             messagesToSend.forEach(response -> {
-                if (response instanceof SendMessage) {
-                    executeWithExceptionCheck((SendMessage) response);
+                if (response instanceof SendMessage message) {
+                    executeWithExceptionCheck(message);
                 }
             });
         }

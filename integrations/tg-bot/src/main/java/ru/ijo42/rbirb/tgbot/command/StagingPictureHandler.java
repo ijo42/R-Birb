@@ -48,7 +48,7 @@ public class StagingPictureHandler extends AbstractBaseHandler {
 
         String name = arg + (result.getHeaders().getContentType() == MediaType.IMAGE_GIF ? ".gif" : ".png");
         absSender.executeWithExceptionCheck(sendImageUploadingAFile(result.getBody().getInputStream(), name, arg, chatId));
-        return List.of();
+        return Collections.emptyList();
     }
 
 
@@ -73,7 +73,7 @@ public class StagingPictureHandler extends AbstractBaseHandler {
     @Override
     public List<BotApiMethod<Message>> handleOther(Update update) {
         String msg = update.getCallbackQuery().getData();
-        int userId = update.getCallbackQuery().getFrom().getId();
+        int userId = update.getCallbackQuery().getFrom().getId().intValue();
         if (msg.startsWith("accept"))
             accept(Integer.parseInt(msg.substring("accept@".length())), userId);
         else
@@ -88,13 +88,13 @@ public class StagingPictureHandler extends AbstractBaseHandler {
         headers.set(HttpHeaders.AUTHORIZATION, userService.getToken(userId));
         HttpEntity<String> entity = new HttpEntity<>("", headers);
 
-        ResponseEntity<String> result = restTemplate.exchange(restEndpoint + "/staging/" + id, HttpMethod.DELETE, entity, String.class);
+        restTemplate.exchange(restEndpoint + "/staging/" + id, HttpMethod.DELETE, entity, String.class);
     }
     public void accept(int id, int userId){
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, userService.getToken(userId));
         HttpEntity<String> entity = new HttpEntity<>("", headers);
 
-        ResponseEntity<String> result = restTemplate.exchange(restEndpoint + "/staging/" + id, HttpMethod.POST, entity, String.class);
+        restTemplate.exchange(restEndpoint + "/staging/" + id, HttpMethod.POST, entity, String.class);
     }
 }

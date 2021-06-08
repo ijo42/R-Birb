@@ -22,10 +22,14 @@ public class TokenHandler extends AbstractBaseHandler {
         headers.set(HttpHeaders.AUTHORIZATION, token);
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<String> result = restTemplate.exchange(restEndpoint + "/moderate/check", HttpMethod.GET, entity, String.class);
-        if (result.getStatusCode() != HttpStatus.OK)
+        ResponseEntity<String> result = null;
+        try {
+            result = restTemplate.exchange(restEndpoint + "/moderate/check", HttpMethod.GET, entity, String.class);
+        } catch (Exception ignored) {
+        }
+        if (result == null || result.getStatusCode() != HttpStatus.OK)
             return List.of(MessageBuilder.create(chatId)
-                    .line("*%s* not a valid token", userService.getToken(user.getId()))
+                    .line("*%s* not a valid token", token)
                     .build());
         userService.updateToken(user, token);
 
